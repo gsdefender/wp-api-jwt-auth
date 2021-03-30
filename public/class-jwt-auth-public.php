@@ -257,7 +257,18 @@ class Jwt_Auth_Public
                 )
             );
         }
-
+	/* cfr. https://wordpress.org/support/topic/fix-basic-authentication-jwt_auth_bad_auth_header-error/ */
+	if (!$token) {
+            // Get token using basic auth
+            list($username, $password) = explode( ':', base64_decode( substr( $auth, 6 ) ) );
+            $request = new WP_REST_Request( 'POST', '/wp-json/jwt-auth/v1/token' );
+            $request->set_param( 'username', $username );
+            $request->set_param( 'password', $password );
+            $JWT = new Jwt_Auth_Public('jwt-auth', '1.1.0');
+            $token = $JWT->generate_token( $request );
+            if (is_array($token) && isset($token['token'])) $token = $token['token'];
+            return;
+        }
         /** Get the Secret Key */
         $secret_key = defined('JWT_AUTH_SECRET_KEY') ? JWT_AUTH_SECRET_KEY : false;
         if (!$secret_key) {
